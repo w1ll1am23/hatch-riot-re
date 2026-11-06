@@ -1,5 +1,9 @@
 # hatch-riot-re
 
+See the [Rest+ 2 ESPHome sample guide](docs/rest-plus-2-esphome.md) for display,
+button gestures, and automatic stock-sound looping. Power safety remains unvalidated.
+
+
 Reverse-engineering notes for the Hatch **"riot"** device firmware, and a working [ESPHome](https://esphome.io)
 replacement firmware for it.
 
@@ -88,15 +92,48 @@ These parts needed custom code (local components in [`esphome/components/`](esph
 - [docs/methodology.md](docs/methodology.md): how the analysis was done, and how to reproduce it with `tools/`.
 - [docs/probe-firmware.md](docs/probe-firmware.md): **safety model and test plan for the ESPHome probe firmware**.
 
+## Local Rest+ BLE flasher
+
+[`flasher/`](flasher/README.md) is an independent experimental local tool for
+stock Wi-Fi setup and application-only first installs on **Rest+ 2nd gen
+(HBRESTPLUS2)**. Tested stock routes are 7.1.645 (WSUP) and 7.1.503 (state.rF).
+It includes a localhost dashboard, Python server and offline tests; it does not
+include a Rest+ firmware configuration or change the Rest firmware's support.
+**Do not flash the Rest YAML onto Rest+.** Other models, including Rest, are not
+verified with this flasher. Read its safety and recovery limits before use.
+
 ## ESPHome firmware
 
-- [`esphome/hatch-rest.yaml`](esphome/hatch-rest.yaml): **the stock replacement** (builds with ESPHome 2026.9.1),
+- [`esphome/hatch-rest.yaml`](esphome/hatch-rest.yaml): **the stock replacement** (builds with ESPHome 2026.10.0),
   with local components `hatch_expander`, `hatch_display` and `hatch_status_led`.
 - `esphome/hatch-riot-probe.yaml`: a read-mostly diagnostic firmware used to confirm the hardware map, plus a local
   `riot_probe` component.
 - `scripts/backup.sh`: read-only eFuse check plus a full-flash backup, read twice and verified. **Run this before
   flashing anything.**
 - `scripts/restore.sh`: write a backup back to the device (return to stock).
+
+### Hatch Rest+ 2 local scenes
+
+The [Rest+ 2 example](esphome/hatch-plus-example.yaml) stores ten device-local
+presets, including light, stock sound/volume, clock brightness and text. They
+work without Home Assistant. `store_preset(index, name)` and `apply_preset(index)`
+are available through the native API.
+
+Button choices live in `hatch_plus.buttons`: use `tap: next` on the top touch
+button to cycle, or `tap: none` to disable it. Set `hold: manage_preset` on your
+chosen save/delete button. Release at 5–<10 seconds to save a new slot (`SAVn`);
+hold to 10 seconds to preview `DELn`, then release to delete. See the
+[scene configuration guide](docs/rest-plus-2-esphome.md#on-device-scene-buttons).
+
+### Hatch Rest+ 2 button blueprint
+
+[`blueprints/automation/hatch-rest-plus-2/buttons.yaml`](blueprints/automation/hatch-rest-plus-2/buttons.yaml)
+provides short, long, double and triple press actions for all seven Rest+ 2
+buttons using ESPHome firmware events. Set the event device name and any custom
+actions; no raw touch sensor or favorites configuration is required. Native
+firmware actions remain active.
+
+[![Import Rest+ 2 blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fmartinemde%2Fhatch-riot-re%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fhatch-rest-plus-2%2Fbuttons.yaml)
 
 ### Touch ring blueprint
 
